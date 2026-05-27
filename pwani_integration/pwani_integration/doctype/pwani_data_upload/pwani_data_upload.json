@@ -11,7 +11,7 @@
   "item_group",
   "customer_file",
   "item_file",
-  "transaction_file"
+  "sales_invoice_file"
  ],
  "fields": [
   {
@@ -50,16 +50,21 @@
    "label": "Item File"
   },
   {
-   "fieldname": "transaction_file",
-   "fieldtype": "Data",
-   "label": "Transaction File"
+   "fieldname": "sales_invoice_file",
+   "fieldtype": "Attach",
+   "label": "Sales Invoice File"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2026-05-26 16:48:19.849751",
+ "links": [
+  {
+   "link_doctype": "Pwani Integration Log",
+   "link_fieldname": "reference_name"
+  }
+ ],
+ "modified": "2026-05-27 17:02:08.642848",
  "modified_by": "Administrator",
  "module": "Pwani Integration",
  "name": "Pwani Data Upload",
@@ -79,6 +84,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
