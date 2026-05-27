@@ -138,22 +138,22 @@ class PwaniDataUpload(Document):
 		
 		data = frappe.db.sql("""
 			SELECT DISTINCT
-				i.item_code distributor_product_code,
+				sii.item_code distributor_product_code,
 				"" manufacturer_product_code,
 				i.item_group category,
 				i.item_group sub_category,
 				i.item_name product_name,
 				i.item_name description,
 				1 status
-			FROM `tabItem` i
-			INNER JOIN `tabSales Invoice Item` sii on sii.item_code = i.name
-			INNER JOIN `tabSales Invoice` si on si.name = sii.parent
-			INNER JOIN `tabItem Group` ig on ig.name = i.item_group
+			FROM `tabSales Invoice` si
+			LEFT JOIN `tabSales Invoice Item` sii on sii.parent = si.name
+			LEFT JOIN `tabItem` i on i.name = sii.item_code
+			LEFT JOIN `tabItem Group` ig on ig.name = i.item_group
 			WHERE si.posting_date = %s
 			AND si.docstatus in (0,1)
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
-			ORDER BY i.item_code
+			ORDER BY sii.item_code
 		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
 
 		if data:
@@ -256,7 +256,6 @@ class PwaniDataUpload(Document):
 			WHERE si.posting_date = %s
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
-			limit 3
 		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
 
 		if data:
