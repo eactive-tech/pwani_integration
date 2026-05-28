@@ -66,6 +66,7 @@ class PwaniDataUpload(Document):
 			AND si.docstatus in (0, 1)
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
+			AND si.update_stock = 1
 			ORDER BY si.customer
 		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
 
@@ -153,6 +154,7 @@ class PwaniDataUpload(Document):
 			AND si.docstatus in (0,1)
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
+			AND si.update_stock = 1
 			ORDER BY sii.item_code
 		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
 
@@ -247,8 +249,8 @@ class PwaniDataUpload(Document):
 				si.posting_date doc_date,
 				sii.uom uom_code,
 				sii.qty quantity,
-				sii.rate selling_price,
-				sii.amount line_total
+				sii.price_list_rate selling_price,
+				(sii.price_list_rate * sii.qty) line_total
 			FROM `tabSales Invoice` si
 			LEFT JOIN `tabSales Invoice Item` sii on sii.parent = si.name
 			LEFT JOIN `tabItem` i on i.name = sii.item_code
@@ -256,6 +258,7 @@ class PwaniDataUpload(Document):
 			WHERE si.posting_date = %s
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
+			AND si.update_stock = 1
 		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
 
 		if data:
