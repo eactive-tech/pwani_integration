@@ -4,12 +4,14 @@
 import frappe
 from frappe.model.document import Document
 import requests, json
+from erpnext.stock.report.stock_balance.stock_balance import execute as stock_balance_execute
 
 class PwaniDataUpload(Document):
 	def before_save(self):
 		self.generate_customer_file()
 		self.generate_item_file()
 		self.generate_sales_invoice_file()
+		self.generate_stock_balance_file()
 
 	def before_submit(self):
 
@@ -17,6 +19,7 @@ class PwaniDataUpload(Document):
 		self.upload_customer_file(token)
 		self.upload_item_file(token)
 		self.upload_sales_invoice_file(token)
+		self.upload_stock_balance_file(token)
 
 
 	def delete_existing_file(self, fieldname):
@@ -307,6 +310,93 @@ class PwaniDataUpload(Document):
 
 			frappe.msgprint("Sales Invoice CSV Attached Successfully")
 
+	def generate_stock_balance_file(self):
+
+		if not self.item_group:
+			frappe.msgprint("Item Group not configured")
+			return
+
+		try:
+
+			from erpnext.stock.report.stock_balance.stock_balance import execute
+			import csv
+			from io import StringIO
+
+			# Get default company
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+
+			if not company:
+				frappe.msgprint("Default company not configured")
+				return
+
+			# Report filters
+			filters = frappe._dict({
+				"company": company,
+				"from_date": self.upload_date or frappe.utils.nowdate(),
+				"to_date": self.upload_date or frappe.utils.nowdate(),
+				"item_group": self.item_group
+			})
+
+			# Execute stock balance report
+			columns, data = execute(filters)
+
+			if not data:
+				frappe.msgprint("No stock balance data found")
+				return
+
+			# CSV buffer
+			output = StringIO()
+			writer = csv.writer(output)
+
+			# CSV headers
+			writer.writerow([
+				"warehouse_code",
+				"product_code",
+				"uom_code",
+				"quantity"
+			])
+
+			# Write rows
+			for row in data:
+
+				writer.writerow([
+					row.get("warehouse") or "",
+					row.get("item_code") or "",
+					row.get("stock_uom") or "",
+					row.get("bal_qty") or 0
+				])
+
+			csv_content = output.getvalue()
+
+			# Delete existing attachment if required
+			self.delete_existing_file("stock_balance_file")
+
+			# Create attachment
+			file_doc = frappe.get_doc({
+				"doctype": "File",
+				"file_name": f"stock_balance_{self.name}.csv",
+				"attached_to_doctype": self.doctype,
+				"attached_to_name": self.name,
+				"attached_to_field": "stock_balance_file",
+				"content": csv_content,
+				"is_private": 1
+			})
+
+			file_doc.insert(ignore_permissions=True)
+
+			self.stock_balance_file = file_doc.file_url
+
+			frappe.msgprint("Stock Balance CSV Attached Successfully")
+
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				"Error Generating Stock Balance File"
+			)
+
+			frappe.msgprint("Error generating stock balance file")
+			
+
 	def get_auth_token(self):
 		pw_settings = frappe.get_doc("Pwani Settings")
 
@@ -461,6 +551,48 @@ class PwaniDataUpload(Document):
 
 		self.log_api_request(
 			request_type="Sales Invoice Upload",
+			endpoint=url,
+			headers=headers,
+			request_body=f"File: {file_doc.file_name}",
+			response=response
+		)
+
+	def upload_stock_balance_file(self, token):
+		"""
+		Upload Stock Balance File to Pwani
+		Submits to: /api/v1/distributor-files/import/inventory-levels
+		"""
+		if not self.stock_balance_file:
+			frappe.msgprint("Stock Balance File not generated")
+			return
+		
+		pw_settings = frappe.get_doc("Pwani Settings")
+
+		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/inventory-levels"
+
+		headers = {
+			"Authorization": f"Bearer {token}"
+		}
+
+		# Get file path from File doctype
+		file_doc = frappe.get_doc("File", {"file_url": self.stock_balance_file})
+
+		file_path = file_doc.get_full_path()
+
+		with open(file_path, "rb") as f:
+			
+			files = {
+				"file": (file_doc.file_name, f, "text/csv")
+			}
+
+			response = requests.post(
+				url,
+				headers=headers,
+				files=files
+			)
+
+		self.log_api_request(
+			request_type="Stock Balance Upload",
 			endpoint=url,
 			headers=headers,
 			request_body=f"File: {file_doc.file_name}",

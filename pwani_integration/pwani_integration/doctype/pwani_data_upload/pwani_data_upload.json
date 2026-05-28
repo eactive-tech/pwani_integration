@@ -11,7 +11,8 @@
   "item_group",
   "customer_file",
   "item_file",
-  "sales_invoice_file"
+  "sales_invoice_file",
+  "stock_balance_file"
  ],
  "fields": [
   {
@@ -53,6 +54,11 @@
    "fieldname": "sales_invoice_file",
    "fieldtype": "Attach",
    "label": "Sales Invoice File"
+  },
+  {
+   "fieldname": "stock_balance_file",
+   "fieldtype": "Attach",
+   "label": "Stock Balance File"
   }
  ],
  "grid_page_length": 50,
