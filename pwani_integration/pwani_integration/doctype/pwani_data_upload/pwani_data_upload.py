@@ -66,7 +66,7 @@ class PwaniDataUpload(Document):
 			INNER JOIN `tabItem` i on i.name = sii.item_code
 			INNER JOIN `tabItem Group` ig on ig.name = i.item_group
 			WHERE si.posting_date = %s
-			AND si.docstatus in (0, 1)
+			AND si.docstatus = 1
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
@@ -154,7 +154,7 @@ class PwaniDataUpload(Document):
 			LEFT JOIN `tabItem` i on i.name = sii.item_code
 			LEFT JOIN `tabItem Group` ig on ig.name = i.item_group
 			WHERE si.posting_date = %s
-			AND si.docstatus in (0,1)
+			AND si.docstatus = 1
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
@@ -259,6 +259,7 @@ class PwaniDataUpload(Document):
 			LEFT JOIN `tabItem` i on i.name = sii.item_code
 			LEFT JOIN `tabItem Group` ig on ig.name = i.item_group
 			WHERE si.posting_date = %s
+			AND si.docstatus = 1
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
