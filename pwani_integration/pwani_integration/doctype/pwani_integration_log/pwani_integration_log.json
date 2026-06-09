@@ -9,6 +9,7 @@
  "field_order": [
   "request_type",
   "endpoint",
+  "branch",
   "column_break_4",
   "reference_name",
   "status_section",
@@ -100,11 +101,18 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Branch",
+   "options": "Branch"
   }
  ],
  "idx": 1,
  "links": [],
- "modified": "2026-05-27 17:01:18.363954",
+ "modified": "2026-06-09 15:23:49.466631",
  "modified_by": "Administrator",
  "module": "Pwani Integration",
  "name": "Pwani Integration Log",
@@ -126,6 +134,7 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "title_field": "request_type",

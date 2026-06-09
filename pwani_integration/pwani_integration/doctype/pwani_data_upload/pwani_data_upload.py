@@ -60,7 +60,10 @@ class PwaniDataUpload(Document):
 			SELECT DISTINCT
 				si.customer customer_code,
 				si.customer_name,
-				"Active" account_status
+				"Active" account_status,
+				%s region_name,
+				%s location_name,
+				%s category_name
 			FROM `tabSales Invoice` si
 			INNER JOIN `tabSales Invoice Item` sii on sii.parent = si.name
 			INNER JOIN `tabItem` i on i.name = sii.item_code
@@ -70,8 +73,9 @@ class PwaniDataUpload(Document):
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
+			AND si.branch = %s
 			ORDER BY si.customer
-		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
+		""", (self.branch, self.branch, self.branch, self.upload_date, item_group_lft, item_group_rgt, self.branch), as_dict=True)
 
 		if data:
 
@@ -158,8 +162,9 @@ class PwaniDataUpload(Document):
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
+			AND si.branch = %s
 			ORDER BY sii.item_code
-		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
+		""", (self.upload_date, item_group_lft, item_group_rgt, self.branch), as_dict=True)
 
 		if data:
 			# Add uom_list to each row
@@ -263,7 +268,8 @@ class PwaniDataUpload(Document):
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
-		""", (self.upload_date, item_group_lft, item_group_rgt), as_dict=True)
+			AND si.branch = %s
+		""", (self.upload_date, item_group_lft, item_group_rgt, self.branch), as_dict=True)
 
 		if data:
 
@@ -313,6 +319,11 @@ class PwaniDataUpload(Document):
 
 	def generate_stock_balance_file(self):
 
+		warehouse = frappe.db.get_value("Branch", self.branch, "custom_warehouse")
+
+		if not self.item_group:
+			frappe.msgprint("Item Group not configured")
+			return
 		if not self.item_group:
 			frappe.msgprint("Item Group not configured")
 			return
@@ -335,7 +346,8 @@ class PwaniDataUpload(Document):
 				"company": company,
 				"from_date": self.upload_date or frappe.utils.nowdate(),
 				"to_date": self.upload_date or frappe.utils.nowdate(),
-				"item_group": self.item_group
+				"item_group": self.item_group,
+				"warehouse": warehouse
 			})
 
 			# Execute stock balance report
@@ -401,16 +413,30 @@ class PwaniDataUpload(Document):
 	def get_auth_token(self):
 		pw_settings = frappe.get_doc("Pwani Settings")
 
-		auth_url = f"{pw_settings.host_url}/api/v1/auth/login"
+		if self.branch == 'Nairobi':
 
-		auth_headers = {
-			"Content-Type": "application/json"
-		}
+			auth_url = f"{pw_settings.host_url}/api/v1/auth/login"
 
-		auth_payload = {
-			"email_address": pw_settings.user_name,
-			"password": pw_settings.password
-		}
+			auth_headers = {
+				"Content-Type": "application/json"
+			}
+
+			auth_payload = {
+				"email_address": pw_settings.user_name,
+				"password": pw_settings.password
+			}
+		if self.branch == 'Machakos':
+
+			auth_url = f"{pw_settings.host_url_2}/api/v1/auth/login"
+
+			auth_headers = {
+				"Content-Type": "application/json"
+			}
+
+			auth_payload = {
+				"email_address": pw_settings.user_name_2,
+				"password": pw_settings.password_2
+			}
 
 		auth_response = requests.post(auth_url, data=json.dumps(auth_payload), headers=auth_headers)
 
@@ -428,6 +454,7 @@ class PwaniDataUpload(Document):
 				"doctype": "Pwani Integration Log",
 				"request_type": request_type,
 				"endpoint": endpoint,
+				"branch": self.branch,
 				"reference_name": self.name,
 				"status_code": response.status_code if response else None,
 				"success": success,

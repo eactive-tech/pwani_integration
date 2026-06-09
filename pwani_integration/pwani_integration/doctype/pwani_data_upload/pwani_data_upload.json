@@ -8,6 +8,7 @@
   "section_break_xlua",
   "amended_from",
   "upload_date",
+  "branch",
   "item_group",
   "customer_file",
   "item_file",
@@ -32,13 +33,17 @@
   {
    "fieldname": "upload_date",
    "fieldtype": "Date",
-   "label": "Upload Date"
+   "in_list_view": 1,
+   "label": "Upload Date",
+   "reqd": 1
   },
   {
    "fieldname": "item_group",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item Group",
-   "options": "Item Group"
+   "options": "Item Group",
+   "reqd": 1
   },
   {
    "fieldname": "customer_file",
@@ -59,6 +64,14 @@
    "fieldname": "stock_balance_file",
    "fieldtype": "Attach",
    "label": "Stock Balance File"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Branch",
+   "options": "Branch",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
@@ -70,7 +83,7 @@
    "link_fieldname": "reference_name"
   }
  ],
- "modified": "2026-05-27 17:02:08.642848",
+ "modified": "2026-06-09 15:07:32.565554",
  "modified_by": "Administrator",
  "module": "Pwani Integration",
  "name": "Pwani Data Upload",
