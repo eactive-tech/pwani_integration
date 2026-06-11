@@ -13,6 +13,7 @@
   "customer_file",
   "item_file",
   "sales_invoice_file",
+  "sales_return_file",
   "stock_balance_file"
  ],
  "fields": [
@@ -72,6 +73,11 @@
    "label": "Branch",
    "options": "Branch",
    "reqd": 1
+  },
+  {
+   "fieldname": "sales_return_file",
+   "fieldtype": "Attach",
+   "label": "Sales Return File"
   }
  ],
  "grid_page_length": 50,
@@ -83,7 +89,7 @@
    "link_fieldname": "reference_name"
   }
  ],
- "modified": "2026-06-09 15:07:32.565554",
+ "modified": "2026-06-11 13:26:39.761228",
  "modified_by": "Administrator",
  "module": "Pwani Integration",
  "name": "Pwani Data Upload",

@@ -11,6 +11,7 @@ class PwaniDataUpload(Document):
 		self.generate_customer_file()
 		self.generate_item_file()
 		self.generate_sales_invoice_file()
+		self.generate_sales_return_file()
 		self.generate_stock_balance_file()
 
 	def before_submit(self):
@@ -19,6 +20,7 @@ class PwaniDataUpload(Document):
 		self.upload_customer_file(token)
 		self.upload_item_file(token)
 		self.upload_sales_invoice_file(token)
+		self.upload_sales_return_file(token)
 		self.upload_stock_balance_file(token)
 
 
@@ -61,8 +63,8 @@ class PwaniDataUpload(Document):
 				si.customer customer_code,
 				si.customer_name,
 				"Active" account_status,
-				%s region_name,
-				%s location_name,
+				%s region,
+				%s location,
 				%s category_name
 			FROM `tabSales Invoice` si
 			INNER JOIN `tabSales Invoice Item` sii on sii.parent = si.name
@@ -268,6 +270,7 @@ class PwaniDataUpload(Document):
 			AND ig.lft >= %s
 			AND ig.rgt <= %s
 			AND si.update_stock = 1
+			AND si.is_return = 0
 			AND si.branch = %s
 		""", (self.upload_date, item_group_lft, item_group_rgt, self.branch), as_dict=True)
 
@@ -314,6 +317,89 @@ class PwaniDataUpload(Document):
 			file_doc.insert(ignore_permissions=True)
 
 			self.sales_invoice_file = file_doc.file_url
+
+			frappe.msgprint("Sales Invoice CSV Attached Successfully")
+
+	def generate_sales_return_file(self):
+
+		pw_settings = frappe.get_doc("Pwani Settings")
+		
+		# Get item group lft and rgt for filtering
+		if not self.item_group:
+			frappe.msgprint("Item Group not configured")
+			return
+		
+		item_group = frappe.get_doc("Item Group", self.item_group)
+		item_group_lft = item_group.lft
+		item_group_rgt = item_group.rgt
+
+		data = frappe.db.sql("""
+			SELECT
+				si.name invoice_id,
+				sii.item_code product_code,
+				si.customer customer_code,
+				si.name erp_reference,
+				si.posting_date doc_date,
+				sii.uom uom_code,
+				sii.qty quantity,
+				sii.price_list_rate selling_price,
+				(sii.price_list_rate * sii.qty) line_total
+			FROM `tabSales Invoice` si
+			LEFT JOIN `tabSales Invoice Item` sii on sii.parent = si.name
+			LEFT JOIN `tabItem` i on i.name = sii.item_code
+			LEFT JOIN `tabItem Group` ig on ig.name = i.item_group
+			WHERE si.posting_date = %s
+			AND si.docstatus = 1
+			AND ig.lft >= %s
+			AND ig.rgt <= %s
+			AND si.update_stock = 1
+			AND si.is_return = 1
+			AND si.branch = %s
+		""", (self.upload_date, item_group_lft, item_group_rgt, self.branch), as_dict=True)
+
+		if data:
+
+			# CSV Content
+			csv_content = ""
+
+			# Header
+			headers = list(data[0].keys())
+			csv_content = csv_content+ ",".join(headers) + "\n"
+
+			# Rows
+			for row in data:
+				values = []
+
+				for h in headers:
+					value = row.get(h) or ""
+
+					# Escape commas and quotes
+					value = str(value).replace('"', '""')
+
+					if "," in value or '"' in value:
+						value = f'"{value}"'
+
+					values.append(value)
+
+				csv_content = csv_content+ ",".join(values) + "\n"
+
+			# Delete any existing attachment for this field before creating a new one
+			self.delete_existing_file("sales_invoice_file")
+
+			# Create File attachment
+			file_doc = frappe.get_doc({
+				"doctype": "File",
+				"file_name": f"sales_invoice_{self.name}.csv",
+				"attached_to_doctype": self.doctype,
+				"attached_to_name": self.name,
+				"attached_to_field": "sales_invoice_file",
+				"content": csv_content,
+				"is_private": 1
+			})
+
+			file_doc.insert(ignore_permissions=True)
+
+			self.sales_return_file = file_doc.file_url
 
 			frappe.msgprint("Sales Invoice CSV Attached Successfully")
 
@@ -579,6 +665,44 @@ class PwaniDataUpload(Document):
 
 		self.log_api_request(
 			request_type="Sales Invoice Upload",
+			endpoint=url,
+			headers=headers,
+			request_body=f"File: {file_doc.file_name}",
+			response=response
+		)
+
+	def upload_sales_return_file(self, token):
+		"""
+		Upload Sales Return File to Pwani
+
+		"""
+		pw_settings = frappe.get_doc("Pwani Settings")
+
+		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/credit-notes"
+
+		headers = {
+			"Authorization": f"Bearer {token}"
+		}
+
+		# Get file path from File doctype
+		file_doc = frappe.get_doc("File", {"file_url": self.sales_return_file})
+
+		file_path = file_doc.get_full_path()
+
+		with open(file_path, "rb") as f:
+			
+			files = {
+				"file": (file_doc.file_name, f, "text/csv")
+			}
+
+			response = requests.post(
+				url,
+				headers=headers,
+				files=files
+			)
+
+		self.log_api_request(
+			request_type="Sales Return Upload",
 			endpoint=url,
 			headers=headers,
 			request_body=f"File: {file_doc.file_name}",
