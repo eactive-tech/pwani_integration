@@ -562,6 +562,9 @@ class PwaniDataUpload(Document):
 		Data Upload Request
 
 		"""
+		if not self.customer_file:
+			return
+
 		pw_settings = frappe.get_doc("Pwani Settings")
 
 		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/customers"
@@ -600,6 +603,9 @@ class PwaniDataUpload(Document):
 		Upload Item/Product File to Pwani
 
 		"""
+		if not self.item_file:
+			return
+
 		pw_settings = frappe.get_doc("Pwani Settings")
 
 		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/products"
@@ -638,6 +644,9 @@ class PwaniDataUpload(Document):
 		Upload Sales Invoice File to Pwani
 
 		"""
+		if not self.sales_invoice_file:
+			return
+
 		pw_settings = frappe.get_doc("Pwani Settings")
 
 		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/invoices"
@@ -676,6 +685,9 @@ class PwaniDataUpload(Document):
 		Upload Sales Return File to Pwani
 
 		"""
+		if not self.sales_return_file:
+			return
+
 		pw_settings = frappe.get_doc("Pwani Settings")
 
 		url = f"{pw_settings.host_url}/api/v1/distributor-files/import/credit-notes"
