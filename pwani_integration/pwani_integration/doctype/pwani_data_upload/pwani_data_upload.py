@@ -260,7 +260,8 @@ class PwaniDataUpload(Document):
 				sii.uom uom_code,
 				sii.qty quantity,
 				sii.price_list_rate selling_price,
-				(sii.price_list_rate * sii.qty) line_total
+				(sii.price_list_rate * sii.qty) line_total,
+				sii.idx item_line_id
 			FROM `tabSales Invoice` si
 			LEFT JOIN `tabSales Invoice Item` sii on sii.parent = si.name
 			LEFT JOIN `tabItem` i on i.name = sii.item_code
@@ -343,7 +344,8 @@ class PwaniDataUpload(Document):
 				sii.uom uom_code,
 				sii.qty quantity,
 				sii.price_list_rate selling_price,
-				(sii.price_list_rate * sii.qty) line_total
+				(sii.price_list_rate * sii.qty) line_total,
+				sii.idx item_line_id
 			FROM `tabSales Invoice` si
 			LEFT JOIN `tabSales Invoice Item` sii on sii.parent = si.name
 			LEFT JOIN `tabItem` i on i.name = sii.item_code
@@ -401,7 +403,7 @@ class PwaniDataUpload(Document):
 
 			self.sales_return_file = file_doc.file_url
 
-			frappe.msgprint("Sales Invoice CSV Attached Successfully")
+			frappe.msgprint("Sales Return CSV Attached Successfully")
 
 	def generate_stock_balance_file(self):
 
