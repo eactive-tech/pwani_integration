@@ -384,15 +384,15 @@ class PwaniDataUpload(Document):
 				csv_content = csv_content+ ",".join(values) + "\n"
 
 			# Delete any existing attachment for this field before creating a new one
-			self.delete_existing_file("sales_invoice_file")
+			self.delete_existing_file("sales_return_file")
 
 			# Create File attachment
 			file_doc = frappe.get_doc({
 				"doctype": "File",
-				"file_name": f"sales_invoice_{self.name}.csv",
+				"file_name": f"sales_return_{self.name}.csv",
 				"attached_to_doctype": self.doctype,
 				"attached_to_name": self.name,
-				"attached_to_field": "sales_invoice_file",
+				"attached_to_field": "sales_return_file",
 				"content": csv_content,
 				"is_private": 1
 			})
